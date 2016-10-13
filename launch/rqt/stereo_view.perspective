@@ -37,7 +37,7 @@
                 }, 
                 "mouse_pub_topic": {
                   "type": "repr", 
-                  "repr": "u'/rgb/image_rect_mouse_left'"
+                  "repr": "u'/rgb/image_raw_mouse_left'"
                 }, 
                 "zoom1": {
                   "type": "repr", 
@@ -49,7 +49,7 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/rgb/image_rect'"
+                  "repr": "u'/rgb/image_raw'"
                 }, 
                 "publish_click_location": {
                   "type": "repr", 
@@ -88,7 +88,7 @@
                 }, 
                 "mouse_pub_topic": {
                   "type": "repr", 
-                  "repr": "u'/duo3d/left/image_rect_mouse_left'"
+                  "repr": "u'/duo3d/left/image_raw_mouse_left'"
                 }, 
                 "zoom1": {
                   "type": "repr", 
@@ -100,7 +100,7 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/duo3d/left/image_rect'"
+                  "repr": "u'/duo3d/left/image_raw'"
                 }, 
                 "publish_click_location": {
                   "type": "repr", 
@@ -227,7 +227,7 @@
                 }, 
                 "mouse_pub_topic": {
                   "type": "repr", 
-                  "repr": "u'/duo3d/right/image_rect_mouse_left'"
+                  "repr": "u'/duo3d/right/image_raw_mouse_left'"
                 }, 
                 "zoom1": {
                   "type": "repr", 
@@ -239,7 +239,7 @@
                 }, 
                 "topic": {
                   "type": "repr", 
-                  "repr": "u'/duo3d/right/image_rect'"
+                  "repr": "u'/duo3d/right/image_raw'"
                 }, 
                 "publish_click_location": {
                   "type": "repr", 

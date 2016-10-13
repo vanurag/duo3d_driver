@@ -84,9 +84,9 @@ const vector<string> frame_id_param_name =
 // parameter default values
 vector<string> topic_name =
 {
-    prefix[LEFT] + "/image_rect",
-    prefix[RIGHT] + "/image_rect",
-    prefix[RGB] + "/image_rect",
+    prefix[LEFT] + "/image_raw",
+    prefix[RIGHT] + "/image_raw",
+    prefix[RGB] + "/image_raw",
     prefix[DEPTH] + "/image_raw",
     prefix[POINT_CLOUD] + "/image_raw",
     prefix[IMU] + "/data_raw",
@@ -146,6 +146,7 @@ class DUO3DDriver
     // Gyroscope offset calibration
     int _num_samples;
     double _gyro_offset[3];
+    double _accel_offset[3];
 
 public:
     DUO3DDriver()
@@ -262,6 +263,7 @@ protected:
         // Set DUO parameters
         if(duo)
         {
+            SetDUOUndistort(duo, config.undistort);
             SetDUOGain(duo, config.gain);
             SetDUOExposure(duo, config.exposure);
             SetDUOAutoExposure(duo, config.auto_exposure);
@@ -383,21 +385,33 @@ protected:
                     // Calibrate gyroscope offsets for 100 samples
                     if(_num_samples < 100)
                     {
-                        if(_num_samples == 0)
+                        if(_num_samples == 0) {
                             _gyro_offset[0] = _gyro_offset[1] = _gyro_offset[2] = 0;
+                            _accel_offset[0] = _accel_offset[1] = _accel_offset[2] = 0;
+                        }
                         _gyro_offset[0] += pFrame->duoFrame->IMUData[j].gyroData[0];
                         _gyro_offset[1] += pFrame->duoFrame->IMUData[j].gyroData[1];
                         _gyro_offset[2] += pFrame->duoFrame->IMUData[j].gyroData[2];
+                        _accel_offset[0] += pFrame->duoFrame->IMUData[j].accelData[0];
+                        _accel_offset[1] += pFrame->duoFrame->IMUData[j].accelData[1];
+                        _accel_offset[2] += pFrame->duoFrame->IMUData[j].accelData[2];
                     }
                     else if(_num_samples == 100)
                     {
                         _gyro_offset[0] /= 100.0f;
                         _gyro_offset[1] /= 100.0f;
                         _gyro_offset[2] /= 100.0f;
+                        _accel_offset[0] /= 100.0f;
+                        _accel_offset[1] /= 100.0f;
+                        _accel_offset[2] /= 100.0f;
                         ROS_INFO("Calculated gyroscope offets [%g, %g, %g]",
                                  _gyro_offset[0],
                                  _gyro_offset[1],
                                  _gyro_offset[2]);
+                        ROS_INFO("Calculated accelerometer offets [%g, %g, %g]",
+                                 _accel_offset[0],
+                                 _accel_offset[1],
+                                 _accel_offset[2]);
                     }
                     else
                     {
@@ -405,13 +419,15 @@ protected:
                         header.stamp = ros::Time(_start_time + (double)pFrame->duoFrame->IMUData[j].timeStamp / 10000.0);
                         imu_msg.header = header;
                         // Accelerations should be in m/s^2
-                        imu_msg.linear_acceleration.x = pFrame->duoFrame->IMUData[j].accelData[0] * 9.81;
-                        imu_msg.linear_acceleration.y = -pFrame->duoFrame->IMUData[j].accelData[1] * 9.81;
-                        imu_msg.linear_acceleration.z = -pFrame->duoFrame->IMUData[j].accelData[2] * 9.81;
+                        // scaling offsets from Kalibr
+                        imu_msg.linear_acceleration.x = (pFrame->duoFrame->IMUData[j].accelData[0]) * 9.81 * 2.0233; // - _accel_offset[0]) * 9.81;
+                        imu_msg.linear_acceleration.y = (pFrame->duoFrame->IMUData[j].accelData[1]) * 9.81 * 2.0856; // - _accel_offset[1]) * 9.81;
+                        imu_msg.linear_acceleration.z = (pFrame->duoFrame->IMUData[j].accelData[2]) * 9.81 * 2.0626; // - _accel_offset[2]) * 9.81;
                         // Angular velocity should be in rad/sec
-                        imu_msg.angular_velocity.x = DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[0] - _gyro_offset[0]);
-                        imu_msg.angular_velocity.y = -DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[1] - _gyro_offset[1]);
-                        imu_msg.angular_velocity.z = -DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[2] - _gyro_offset[2]);
+                        // scaling offsets from Kalibr
+                        imu_msg.angular_velocity.x = DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[0] - _gyro_offset[0]) * 1.0448;
+                        imu_msg.angular_velocity.y = DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[1] - _gyro_offset[1]) * 1.1456;
+                        imu_msg.angular_velocity.z = DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[2] - _gyro_offset[2]) * 1.0356;
                         _pub_imu.publish(imu_msg);
                     }
                     if(_num_samples < 101) _num_samples++;
