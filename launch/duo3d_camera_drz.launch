@@ -1,0 +1,37 @@
+<launch>
+     <node name="duo3d" pkg="duo3d_driver" type="duo3d_driver" output="screen">
+		<param name="frame_rate" value="30.0"/>
+		<rosparam param="image_size">[752, 480]</rosparam>
+		<param name="dense3d_license" value="N1MNL-JYLK7-JO9NE-6ZK6A-3TQ5Q"/>
+		<param name="auto_exposure" value="true"/>
+		<param name="vertical_flip" value="true"/>
+		<param name="led" value="30"/>
+
+        <!-- accelerometer biases (in m/s2) -->
+        <param name="ba_x" value="0.16157923183849998"/>
+        <param name="ba_y" value="-0.0364991592036"/>
+        <param name="ba_z" value="-0.899972985732"/>
+
+        <!-- gyroscope biases (in rad/s) -->
+        <param name="bg_x" value="-0.008760948718893333"/>
+        <param name="bg_y" value="0.00104252851389"/>
+        <param name="bg_z" value="0.015049720032366666"/>
+
+        <!-- accelerometer scaling (Kalibr Lower-triangular matrix inv(M)) -->
+        <param name="sa_xx" value="1"/>
+        <param name="sa_yx" value="0"/>
+        <param name="sa_yy" value="1"/>
+        <param name="sa_zx" value="0"/>
+        <param name="sa_zy" value="0"/>
+        <param name="sa_zz" value="1"/>
+
+        <!-- gyroscope scaling (Kalibr Lower-triangular matrix inv(M)) -->
+        <param name="sg_xx" value="1"/>
+        <param name="sg_yx" value="0"/>
+        <param name="sg_yy" value="1"/>
+        <param name="sg_zx" value="0"/>
+        <param name="sg_zy" value="0"/>
+        <param name="sg_zz" value="1"/>
+    </node>
+	<node pkg="rqt_gui" type="rqt_gui" name="rqt_gui" args="--perspective-file $(find duo3d_driver)/launch/rqt/stereo_view.perspective"/>
+</launch>

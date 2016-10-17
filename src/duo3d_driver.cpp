@@ -143,10 +143,18 @@ class DUO3DDriver
     // Temperature publisher
     ros::Publisher _pub_temperature;
 
-    // Gyroscope offset calibration
+    // Online Gyroscope, Accel offset calibration
     int _num_samples;
     double _gyro_offset[3];
     double _accel_offset[3];
+
+    // Offline calibration: bias & scaling values
+    double _accel_bias[3];
+    double _gyro_bias[3];
+    double _accel_scaling[6]; // Lower Triangular Matrix from Kalibr
+    double _gyro_scaling[6]; // Lower Triangular Matrix from Kalibr
+
+    static constexpr double _kGravityAccel = 9.807;
 
 public:
     DUO3DDriver()
@@ -154,7 +162,11 @@ public:
           _dense3d_license("XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"),
           _nh(NODE_NAME),
           _frame_rate(30),
-          _image_size({640, 480})
+          _image_size({640, 480}),
+          _gyro_bias{0, 0, 0},
+          _accel_bias{0, 0, 0},
+          _gyro_scaling{1, 0, 1, 0, 0, 1},
+          _accel_scaling{1, 0, 1, 0, 0, 1}
 	{
         // Build color lookup table for depth display
         _colorLut = Mat(Size(256, 1), CV_8UC3);
@@ -247,6 +259,38 @@ protected:
         nh.getParam("frame_rate", _frame_rate);
         nh.getParam("image_size", _image_size);
         nh.getParam("dense3d_license", _dense3d_license);
+
+        // Calibration data
+        nh.getParam("ba_x", _accel_bias[0]);
+        nh.getParam("ba_y", _accel_bias[1]);
+        nh.getParam("ba_z", _accel_bias[2]);
+        ROS_INFO("Loaded accelerometer biases [%g, %g, %g]",
+                 _accel_bias[0], _accel_bias[1], _accel_bias[2]);
+        nh.getParam("bg_x", _gyro_bias[0]);
+        nh.getParam("bg_y", _gyro_bias[1]);
+        nh.getParam("bg_z", _gyro_bias[2]);
+        ROS_INFO("Loaded gyroscope biases [%g, %g, %g]",
+                 _gyro_bias[0], _gyro_bias[1], _gyro_bias[2]);
+        nh.getParam("sa_xx", _accel_scaling[0]);
+        nh.getParam("sa_yx", _accel_scaling[1]);
+        nh.getParam("sa_yy", _accel_scaling[2]);
+        nh.getParam("sa_zx", _accel_scaling[3]);
+        nh.getParam("sa_zy", _accel_scaling[4]);
+        nh.getParam("sa_zz", _accel_scaling[5]);
+        ROS_INFO("Loaded accelerometer scaling \n[%g, %g, %g\n %g, %g, %g\n %g, %g, %g]",
+                 _accel_scaling[0],               0.0,              0.0,
+                 _accel_scaling[1], _accel_scaling[2],              0.0,
+                 _accel_scaling[3], _accel_scaling[4], _accel_scaling[5]);
+        nh.getParam("sg_xx", _gyro_scaling[0]);
+        nh.getParam("sg_yx", _gyro_scaling[1]);
+        nh.getParam("sg_yy", _gyro_scaling[2]);
+        nh.getParam("sg_zx", _gyro_scaling[3]);
+        nh.getParam("sg_zy", _gyro_scaling[4]);
+        nh.getParam("sg_zz", _gyro_scaling[5]);
+        ROS_INFO("Loaded gyroscope scaling \n[%g, %g, %g\n %g, %g, %g\n %g, %g, %g]",
+                 _gyro_scaling[0],              0.0,             0.0,
+                 _gyro_scaling[1], _gyro_scaling[2],             0.0,
+                 _gyro_scaling[3], _gyro_scaling[4], _gyro_scaling[5]);
 
         for(int i = 0; i < topic_param_name.size(); i++)
             nh.getParam(topic_param_name[i], topic_name[i]);
@@ -404,11 +448,11 @@ protected:
                         _accel_offset[0] /= 100.0f;
                         _accel_offset[1] /= 100.0f;
                         _accel_offset[2] /= 100.0f;
-                        ROS_INFO("Calculated gyroscope offets [%g, %g, %g]",
+                        ROS_INFO("Online calculated gyroscope offets [%g, %g, %g]",
                                  _gyro_offset[0],
                                  _gyro_offset[1],
                                  _gyro_offset[2]);
-                        ROS_INFO("Calculated accelerometer offets [%g, %g, %g]",
+                        ROS_INFO("Online calculated accelerometer offets [%g, %g, %g]",
                                  _accel_offset[0],
                                  _accel_offset[1],
                                  _accel_offset[2]);
@@ -418,16 +462,25 @@ protected:
                         // Adjust timestamp
                         header.stamp = ros::Time(_start_time + (double)pFrame->duoFrame->IMUData[j].timeStamp / 10000.0);
                         imu_msg.header = header;
+
                         // Accelerations should be in m/s^2
+                        double a_x = (1.0*pFrame->duoFrame->IMUData[j].accelData[0]*_kGravityAccel)  - _accel_bias[0]; //* 2.0233; // - _accel_offset[0]) * 9.81;
+                        double a_y = (-1.0*pFrame->duoFrame->IMUData[j].accelData[1]*_kGravityAccel) - _accel_bias[1]; // * 2.0856; // - _accel_offset[1]) * 9.81;
+                        double a_z = (-1.0*pFrame->duoFrame->IMUData[j].accelData[2]*_kGravityAccel) - _accel_bias[2]; // * 2.0626; // - _accel_offset[2]) * 9.81;
                         // scaling offsets from Kalibr
-                        imu_msg.linear_acceleration.x = (pFrame->duoFrame->IMUData[j].accelData[0]) * 9.81 * 2.0233; // - _accel_offset[0]) * 9.81;
-                        imu_msg.linear_acceleration.y = (pFrame->duoFrame->IMUData[j].accelData[1]) * 9.81 * 2.0856; // - _accel_offset[1]) * 9.81;
-                        imu_msg.linear_acceleration.z = (pFrame->duoFrame->IMUData[j].accelData[2]) * 9.81 * 2.0626; // - _accel_offset[2]) * 9.81;
+                        imu_msg.linear_acceleration.x = _accel_scaling[0] * a_x;
+                        imu_msg.linear_acceleration.y = _accel_scaling[1] * a_x + _accel_scaling[2] * a_y;
+                        imu_msg.linear_acceleration.z = _accel_scaling[3] * a_x + _accel_scaling[4] * a_y + _accel_scaling[5] * a_z;
+
                         // Angular velocity should be in rad/sec
+                        double w_x = (1.0*DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[0])) - _gyro_bias[0]; // * 1.0448;
+                        double w_y = (-1.0*DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[1])) - _gyro_bias[1]; // * 1.1456;
+                        double w_z = (-1.0*DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[2])) - _gyro_bias[2]; // * 1.0356;
                         // scaling offsets from Kalibr
-                        imu_msg.angular_velocity.x = DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[0] - _gyro_offset[0]) * 1.0448;
-                        imu_msg.angular_velocity.y = DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[1] - _gyro_offset[1]) * 1.1456;
-                        imu_msg.angular_velocity.z = DEG2RAD(pFrame->duoFrame->IMUData[j].gyroData[2] - _gyro_offset[2]) * 1.0356;
+                        imu_msg.angular_velocity.x = _gyro_scaling[0] * w_x;
+                        imu_msg.angular_velocity.y = _gyro_scaling[1] * w_x + _gyro_scaling[2] * w_y;
+                        imu_msg.angular_velocity.z = _gyro_scaling[3] * w_x + _gyro_scaling[4] * w_y + _gyro_scaling[5] * w_z;
+
                         _pub_imu.publish(imu_msg);
                     }
                     if(_num_samples < 101) _num_samples++;
