@@ -31,6 +31,8 @@
 #include <pcl/point_types.h>
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv/cv.h"
 
 // Config parameters
 #include <duo3d_driver/Duo3DConfig.h>
@@ -121,7 +123,7 @@ class DUO3DDriver
     dynamic_reconfigure::Server<Duo3DConfig> _server;
 
     // Camera Parameters
-    float _frame_rate;
+    double _frame_rate;
     vector<int> _image_size;
 
     double _start_time;
