@@ -18,20 +18,20 @@
         <param name="bg_z" value="0.015049720032366666"/>
 
         <!-- accelerometer scaling (Kalibr Lower-triangular matrix inv(M)) -->
-        <param name="sa_xx" value="1"/>
-        <param name="sa_yx" value="0"/>
-        <param name="sa_yy" value="1"/>
-        <param name="sa_zx" value="0"/>
-        <param name="sa_zy" value="0"/>
-        <param name="sa_zz" value="1"/>
+        <param name="sa_xx" value="2.0443"/>
+        <param name="sa_yx" value="0.0164"/>
+        <param name="sa_yy" value="2.0555"/>
+        <param name="sa_zx" value="-0.0095"/>
+        <param name="sa_zy" value="0.0065"/>
+        <param name="sa_zz" value="2.0025"/>
 
         <!-- gyroscope scaling (Kalibr Lower-triangular matrix inv(M)) -->
-        <param name="sg_xx" value="1"/>
-        <param name="sg_yx" value="0"/>
-        <param name="sg_yy" value="1"/>
-        <param name="sg_zx" value="0"/>
-        <param name="sg_zy" value="0"/>
-        <param name="sg_zz" value="1"/>
+        <param name="sg_xx" value="1.0170"/>
+        <param name="sg_yx" value="0.0089"/>
+        <param name="sg_yy" value="1.0248"/>
+        <param name="sg_zx" value="0.0096"/>
+        <param name="sg_zy" value="-0.0210"/>
+        <param name="sg_zz" value="1.0236"/>
     </node>
 	<node pkg="rqt_gui" type="rqt_gui" name="rqt_gui" args="--perspective-file $(find duo3d_driver)/launch/rqt/stereo_view.perspective"/>
 </launch>
