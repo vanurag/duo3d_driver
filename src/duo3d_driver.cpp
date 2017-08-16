@@ -352,7 +352,7 @@ protected:
         for(int i = 0; i < ITEM_COUNT; i++)
         {
             std_msgs::Header header;
-            header.stamp = ros::Time(_start_time + (double)pFrame->duoFrame->timeStamp / 10000.0);
+            header.stamp = ros::Time::now();//ros::Time(_start_time + (double)pFrame->duoFrame->timeStamp / 10000.0);
             header.frame_id = frame_id_name[i];
 
             if((i == LEFT) && (_pub_image[i].getNumSubscribers() > 0))
@@ -462,7 +462,7 @@ protected:
                     else
                     {
                         // Adjust timestamp
-                        header.stamp = ros::Time(_start_time + (double)pFrame->duoFrame->IMUData[j].timeStamp / 10000.0);
+                        header.stamp = ros::Time::now();//ros::Time(_start_time + (double)pFrame->duoFrame->IMUData[j].timeStamp / 10000.0);
                         imu_msg.header = header;
 
                         // Accelerations should be in m/s^2
@@ -493,7 +493,7 @@ protected:
                 sensor_msgs::Temperature temp_msg;
                 for(int j = 0; j < pFrame->duoFrame->IMUSamples; j++)
                 {
-                    header.stamp = ros::Time(_start_time + (double)pFrame->duoFrame->IMUData[j].timeStamp / 10000.0);
+                    header.stamp = ros::Time::now();//ros::Time(_start_time + (double)pFrame->duoFrame->IMUData[j].timeStamp / 10000.0);
                     temp_msg.header = header;
                     temp_msg.temperature = pFrame->duoFrame->IMUData[j].tempData;
                     _pub_temperature.publish(temp_msg);
