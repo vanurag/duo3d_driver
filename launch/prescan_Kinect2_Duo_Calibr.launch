@@ -1,0 +1,19 @@
+<launch>
+  #Kinect
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
+    <arg name="fps_limit" value="24.0" />
+  </include>
+
+  # visualize Kinect v2 RGB images
+  <node name="RGB_image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+  	<remap from="image" to="kinect2/hd/image_color" />
+  </node>
+
+  # visualize Kinect v2 depth images
+  <node name="Depth_image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+  	<remap from="image" to="kinect2/sd/image_depth" />
+  </node>
+
+  #DUOs
+  <include file="$(find duo3d_driver)/launch/duo3d_camera_drz-tx2.launch"/>
+</launch>
