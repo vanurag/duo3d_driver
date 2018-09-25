@@ -6,6 +6,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
+find_package(OpenCV 3 REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
              image_transport
              roscpp
@@ -38,4 +40,5 @@ target_link_libraries(duo3d_driver
                       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libDUO.so
                       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libDense3DMT.so
                       ${catkin_LIBRARIES}
+                      ${OpenCV_LIBS}
 )
